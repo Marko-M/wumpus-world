@@ -1,4 +1,4 @@
-wumpus-world
+Wumpus World in C
 ============
 
-Wumpus World in C
+Hunt the Wumpus is an early video game where player navigates cave in search for gold avoiding dangerous monsters (Wumpus) and bottomless pits. In the modern studies of intelligent system this world is very often modeled using various computer programming languages where computer tries to intelligently find gold without being killed. This is my own implementation of Wumpus World in C programming language.

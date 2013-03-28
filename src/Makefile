@@ -1,4 +1,5 @@
 PROGRAM = wumpus-world
+dir_guard=@mkdir -p $(@D)
 
 IDIR =../include
 CC=gcc
@@ -17,9 +18,11 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
 $(ODIR)/%.o: %.c $(DEPS)
+	$(dir_guard)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(PROGRAM): $(OBJ)
+	$(dir_guard)
 	gcc -o $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: clean

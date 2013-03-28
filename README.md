@@ -8,7 +8,7 @@ Requirements
 
 * Any standard C library and compiler.
 
-Usage on a Linux based operating system
+Instructions for a Linux based operating system
 ----------------------------------------------
 
 First make sure you have C library and GCC compiler installed. If you're using Ubuntu based Linux distribution you can use following command to install required tools:

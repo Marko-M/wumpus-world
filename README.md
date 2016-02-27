@@ -22,3 +22,8 @@ Now you can get the latest package, unpack it and compile the code using followi
     make
     chmod +x wumpus-world
     ./wumpus-world
+
+You can play the game from anywhere in your system by creating a symlink. Run the following command in the src directory:
+
+    sudo ln -s $(pwd)/wumpus-world /usr/local/bin/wumpus-world
+   

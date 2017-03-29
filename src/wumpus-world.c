@@ -56,10 +56,12 @@ struct coord{
 	int x;
 	int y;
 };
+int wx,wy;
 int arrow=1;
 int NOCAVES;
 int performance=0;
 int realWorld[NOCOLS][NOROWS];
+int agentWorld[NOCOLS][NOROWS];
 void displayWorldSymbols(int world[NOROWS][NOCOLS]);
 void displayWorldAll(int world[NOROWS][NOCOLS]);
 void neighborFieldsCoords(struct coord field, struct coord results[4]);
@@ -82,8 +84,8 @@ int takeSuicideAction(int agentWorld[NOCOLS][NOROWS], struct coord field);
 void myPause (void);
 
 int main(int argc, char *argv[]) {
-	int realWorld[NOCOLS][NOROWS];	
-	int agentWorld[NOCOLS][NOROWS];	
+	//int realWorld[NOCOLS][NOROWS];	
+	//int agentWorld[NOCOLS][NOROWS];	
 	int x, y;						
 	struct coord currentCoord;		
 	struct coord start = {0, 0};	
@@ -137,9 +139,7 @@ int main(int argc, char *argv[]) {
 		printf("Current position (%d,%d):\n", currentCoord.x, currentCoord.y);
 		displayWorldAll(agentWorld);
 
-		if(takeGlowAction(agentWorld, currentCoord)){
-			printf("This move is recommended by takeGlowAction method!\n");
-		} else if(takeSafeAction(agentWorld, currentCoord)){
+		 if(takeSafeAction(agentWorld, currentCoord)){
 			printf("This move is recommended by takeSafeAction method!\n");
 		} else if(killWumpus(agentWorld, currentCoord));
 		else if(takeRollTheDiceAction(agentWorld, currentCoord)){
@@ -173,7 +173,7 @@ struct coord getCurrentCoord(int world[NOCOLS][NOROWS]){
 
 void displayWorldAll(int world[NOROWS][NOCOLS]){
 	displayWorldSymbols(world);
-	printf("\nLEGEND\nWumpus (W), Cave (C), Glow (G), WumpusSus (w), CaveSus (s), GlowSus (g), Breeze (B), Stench (T), Glowing (L), Visited (V), Safe (S), Current (A)\n\n");
+	printf("\nLEGEND\nWumpus (W), Cave (C), Gold (G), WumpusSus (w), CaveSus (c), Breeze (B), Stench (T), Visited (V), Safe (S), Current (A)\n\n");
 	fflush(stdout);
 }
 void displayWorldSymbols(int world[NOROWS][NOCOLS]){
@@ -271,8 +271,9 @@ void copyFlags(int fromWorld[NOCOLS][NOROWS], int toWorld[NOCOLS][NOROWS], struc
 	toWorld[field.x][field.y] |= fromWorld[field.x][field.y];
 }
 int testFlag(int world[NOCOLS][NOROWS], struct coord field, int action){
+       
 	if(((world[field.x][field.y] & action) == action)){
-		return 1;
+		 return 1;
 	} else {
 		return 0;
 	}
@@ -316,8 +317,10 @@ void generateRealWorld(int realWorld[NOCOLS][NOROWS]){
 	{
 		   printf("\n Enter the x (0 to 3) coordinate of Wumpus: ");
 		   scanf("%d",&(wumpusPos[k].x));
+		   wx=wumpusPos[k].x;
 		   printf("\n Enter the y (0 to 3) coordinate of Wumpus: ");
 		   scanf("%d",&(wumpusPos[k].y));
+		   wy=wumpusPos[k].y;
 	}	
 	for(k=0;k<NOCAVES;k++)
 	{
@@ -377,19 +380,7 @@ void generateRealWorld(int realWorld[NOCOLS][NOROWS]){
 				if(xy.x == glowPos[k].x && xy.y == glowPos[k].y){
 					setFlag(realWorld, glowPos[k], GLOW);
 					neighborFieldsCoords(xy, neighbors);
-					for(z=0; z<4; z++){
-						if	(
-								((neighbors[z].y < NOROWS) && (z == 0))
-								||
-								((neighbors[z].x < NOCOLS) && (z == 1))
-								||
-								((neighbors[z].y >= 0) && (z == 2))
-								||
-								((neighbors[z].x >= 0) && (z == 3))
-							){
-							setFlag(realWorld, neighbors[z], GLOWING);
-						}
-					}
+					
 				}
 			}
 		}
@@ -397,7 +388,9 @@ void generateRealWorld(int realWorld[NOCOLS][NOROWS]){
 }
 void evaluateNeighbors(int agentWorld[NOCOLS][NOROWS], struct coord field){
 	int z;
+	int vy,vx;
 	struct coord neighbors[4];
+	struct coord temp;
 	neighborFieldsCoords(field, neighbors);
 	for(z=0; z<4; z++){
 		if	(	(
@@ -426,20 +419,49 @@ void evaluateNeighbors(int agentWorld[NOCOLS][NOROWS], struct coord field){
 				if(testFlag(agentWorld, neighbors[z], WUMPUSSUS)){
 					setFlag(agentWorld, neighbors[z], WUMPUS); 
 					printf("\nAttempting to kill Wumpus!\n");				
-					struct coord send=neighbors[z];
-					if(testFlag(realWorld,send,WUMPUS)&& arrow==1)
+					//struct coord send=neighbors[z];
+					//printf("Wumpus might be here%d %d", neighbors[z].x,neighbors[z].y);
+					if(wx==neighbors[z].x && wy==neighbors[z].y && arrow==1)
 					{
 						arrow=0;
 						performance=performance-10;
 						printf("\nArrow shot at Wumpus. SCREAM percieved!!! WUMPUS KILLED\n");
-						delFlag(agentWorld,send,WUMPUS);
-						delFlag(agentWorld,send,WUMPUSSUS);
-						delFlag(agentWorld,send,STENCH);
-						copyFlags(agentWorld,realWorld,send); return;
+						delFlag(agentWorld,neighbors[z],WUMPUS);
+						delFlag(realWorld,neighbors[z],WUMPUS);
+							for(vy=0; vy<NOROWS; vy++)
+							{
+								for(vx=0; vx<NOCOLS; vx++){
+								        temp.x=vx;
+								        temp.y=vy;
+									delFlag(agentWorld,temp,WUMPUSSUS);
+									delFlag(agentWorld,temp,STENCH);
+									delFlag(realWorld,temp,WUMPUSSUS);
+									delFlag(realWorld,temp,STENCH);
+									
+							}
+						}
+						 if((testFlag(agentWorld, field, BREEZE) == 0) ){
+							setFlag(agentWorld, neighbors[z], SAFE);
+							delFlag(agentWorld, neighbors[z], CAVESUS);
+							delFlag(agentWorld, neighbors[z], WUMPUSSUS);
+							delFlag(agentWorld, neighbors[z], CAVE);
+							delFlag(agentWorld, neighbors[z], WUMPUS);
+						}
+						//delFlag(realWorld,neighbors[z],WUMPUS);
+						return;
 					}
 					else if(arrow==1)
 					{
 						 arrow=0;
+						 delFlag(agentWorld,neighbors[z],WUMPUSSUS);
+						 delFlag(agentWorld,neighbors[z],WUMPUS);
+						 if((testFlag(agentWorld, field, BREEZE) == 0) ){
+							setFlag(agentWorld, neighbors[z], SAFE);
+							delFlag(agentWorld, neighbors[z], CAVESUS);
+							delFlag(agentWorld, neighbors[z], WUMPUSSUS);
+							delFlag(agentWorld, neighbors[z], CAVE);
+							delFlag(agentWorld, neighbors[z], WUMPUS);
+						}
 						 performance=performance-10;
 						 printf("\nArrow wasted");
 						 return;
@@ -583,29 +605,7 @@ int calcDirrection(int agentWorld[NOCOLS][NOROWS], struct coord srcField, struct
 	return shortestGoodNeighbor;
 }
 int takeGlowAction(int agentWorld[NOCOLS][NOROWS], struct coord field){
-	int z;
-	struct coord neighbors[4];
-	neighborFieldsCoords(field, neighbors);
-	for(z=0; z<4; z++){
-		if	(	(
-					((neighbors[z].y < NOROWS) && (z == 0))
-					||
-					((neighbors[z].x < NOCOLS) && (z == 1))
-					||
-					((neighbors[z].y >= 0) && (z == 2))
-					||
-					((neighbors[z].x >= 0) && (z == 3))
-				)
-				&&
-				(
-					testFlag(agentWorld, neighbors[z], GLOW)
-				)
-			){
-				printf("GLOW could be nearby, lets grab it!\n");
-				moveOneField(agentWorld, z, field);
-				return(1);
-		}
-	}
+	
 	return(0);
 }
 int takeSafeAction(int agentWorld[NOCOLS][NOROWS], struct coord field){
@@ -687,6 +687,8 @@ int takeSafeAction(int agentWorld[NOCOLS][NOROWS], struct coord field){
 }
 int killWumpus(int agentWorld[NOCOLS][NOROWS], struct coord field){
 	int z,k;
+	int vy,vx;
+	struct coord temp;
    	struct coord neighbors[4];
 	neighborFieldsCoords(field, neighbors);
 	for(z=0; z<4; z++)
@@ -704,25 +706,39 @@ int killWumpus(int agentWorld[NOCOLS][NOROWS], struct coord field){
 				(testFlag(agentWorld, neighbors[z], WUMPUSSUS))
 				){
 					struct coord send=neighbors[z];
-				        if(testFlag(realWorld,send,WUMPUS)&& (arrow==1))
+				        if(wx==neighbors[z].x && wy==neighbors[z].y && (arrow==1))
 				        {
 				        	arrow=0;
 					        performance=performance-10;
 					        printf("\nArrow thrown at Wumpus. SCREAM percieved!!! WUMPUS KILLED\n");
-					        delFlag(agentWorld,send,WUMPUS);
-					        delFlag(agentWorld,send,WUMPUSSUS);
-					        delFlag(agentWorld,send,STENCH);
-					        copyFlags(agentWorld,realWorld,send);
+					       // delFlag(agentWorld,send,WUMPUS);
+					        delFlag(agentWorld,neighbors[z],WUMPUS);
+					        delFlag(realWorld,neighbors[z],WUMPUS);
+							for(vy=0; vy<NOROWS; vy++)
+							{
+								for(vx=0; vx<NOCOLS; vx++){
+								        temp.x=vx;
+								        temp.y=vy;
+									delFlag(agentWorld,temp,WUMPUSSUS);
+									delFlag(agentWorld,temp,STENCH);
+									delFlag(realWorld,temp,WUMPUSSUS);
+									delFlag(realWorld,temp,STENCH);
+									//agentWorld[x][y] = 0;
+							}
+						}
+					        //delFlag(agentWorld,send,WUMPUSSUS);
+					        //delFlag(agentWorld,send,STENCH);
+					        //copyFlags(agentWorld,realWorld,send);
 					        if((testFlag(agentWorld, field, BREEZE) == 0) ){
 							setFlag(agentWorld, neighbors[z], SAFE);
 							delFlag(agentWorld, neighbors[z], CAVESUS);
-							delFlag(agentWorld, neighbors[z], WUMPUSSUS);
+							//delFlag(agentWorld, neighbors[z], WUMPUSSUS);
 							delFlag(agentWorld, neighbors[z], CAVE);
-							delFlag(agentWorld, neighbors[z], WUMPUS);
+							//delFlag(agentWorld, neighbors[z], WUMPUS);
 						}
 						return 1;
 					}
-				        else if(!testFlag(realWorld,send,WUMPUS)&& (arrow==1))
+				        else if (arrow==1)
 				        {
 						 arrow=0;
 						 performance=performance-10;
@@ -735,7 +751,7 @@ int killWumpus(int agentWorld[NOCOLS][NOROWS], struct coord field){
 							delFlag(agentWorld, neighbors[z], WUMPUSSUS);
 							delFlag(agentWorld, neighbors[z], CAVE);
 							delFlag(agentWorld, neighbors[z], WUMPUS);
-						}
+						} 
 				      		return 1;
 				       }
 				       else 
@@ -745,6 +761,7 @@ int killWumpus(int agentWorld[NOCOLS][NOROWS], struct coord field){
 				       }
 			       }
 	}
+	return 0;
 }
 int takeRollTheDiceAction(int agentWorld[NOCOLS][NOROWS], struct coord field){
 	int random,z;
